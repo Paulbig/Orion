@@ -138,6 +138,9 @@
 								<dd>
 									<a onclick="selectItem(this)" id="Map2">Map2</a>
 								</dd>
+								<dd>
+									<a onclick="selectItem(this)" id="Portal">Portal</a>
+								</dd>
 <!-- 							<dd>
 									<a onclick="selectItem(this)" id="iSCSICreate">Create</a>
 								</dd>  -->
@@ -203,11 +206,8 @@
         }else if(obj.id=='Map2'){
                 $('#mainpage iframe').attr('src',"/iscsi/map2");
                 $('#mainpage iframe').css({ "margin-left": "15%","max-width":"1700px"});
-        }else if(obj.id=='iSCSICreate'){
-                $('#mainpage iframe').attr('src',"iscsi/create");
-                $('#mainpage iframe').css({ "margin-left": "15%","max-width":"1700px"});
-        }else if(obj.id=='iSCSI_map_modify'){
-                $('#mainpage iframe').attr('src',"iscsi/map/modify");
+        }else if(obj.id=='Portal'){
+                $('#mainpage iframe').attr('src',"/iscsi/portal");
                 $('#mainpage iframe').css({ "margin-left": "15%","max-width":"1700px"});
         }
         }

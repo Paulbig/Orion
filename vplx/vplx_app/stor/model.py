@@ -207,22 +207,27 @@ class ResourceCreate(views.MethodView):
         data = get_request_data()
         print(data)
         """
-        {'tid': '1611898472', 'node': '{"node_name":"node1","ip":"111111.11","node_type":"Combined"}'}
         """
         tid = data['tid']
         node = eval(data['node'])
+        sp = eval(data['storagepool'])
+
         obj_res = stor.Resource()
+
+
+
         if data['type'] == 'normal':
-            obj_res.create_res_manual()
+            #(self, res, size, node, sp):
+            result = obj_res.create_res_manual(res,size,node,sp)
         elif data['type'] == 'auto':
-            obj_res.create_res_auto()
+            result = obj_res.create_res_auto()
         elif data['type'] == 'add_mirror':
-            obj_res.add_mirror_manual()
+            result = obj_res.add_mirror_manual()
         elif data['type'] == 'diskless':
-            obj_res.create_res_diskless()
+            result = obj_res.create_res_diskless()
         
 #         obj_node.create_node()
-        return cors_data(data)
+        return cors_data(result)
 
 
 '''

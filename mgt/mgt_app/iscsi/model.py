@@ -112,3 +112,9 @@ class IscsiDisk(views.MethodView):
     def get(self):
         return render_template("iscsi_disk.html")
     
+    
+class Iscsiportal(views.MethodView):
+
+    def get(self):
+        return render_template("iscsi_portal.html")
+    

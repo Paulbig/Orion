@@ -1,0 +1,297 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Host</title>
+<meta charset="utf-8" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, user-scalable=no" />
+<link
+	href="{{url_for('static',filename='bootstrap-3.3.7/dist/css/bootstrap.min.css')}}"
+	rel="stylesheet" type="text/css" />
+<style type="text/css">
+body {
+	padding: 10px;
+}
+
+.red {
+	color: #FF0000;
+}
+
+table tbody {
+	display: block;
+	height: 150px;
+	overflow-y: scroll;
+}
+
+table thead, tbody tr {
+	display: table;
+	width: 100%;
+	table-layout: fixed;
+}
+
+table thead {
+	width: calc(100%)
+}
+
+table thead th {
+	background: #ccc;
+	text-align: center;
+}
+
+table tr td {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	-o-text-overflow: ellipsis;
+	-moz-text-overflow: ellipsis;
+	-webkit-text-overflow: ellipsis;
+}
+
+table td:hover { /* 鼠标滑过  显示隐藏的内容  伴有横向的滚动条 */
+	overflow: auto;
+	text-overflow: clip;
+}
+</style>
+
+<style type="text/css">
+.black_overlay {
+	display: none;
+	position: absolute;
+	top: 0%;
+	left: 0%;
+	width: 100%;
+	height: 100%;
+	background-color: black;
+	z-index: 1001;
+	-moz-opacity: 0.8;
+	opacity: .80;
+	filter: alpha(opacity = 80);
+}
+
+.white_content {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 36%;
+	width: 27%;
+	height: 70px;
+	padding: 12px;
+	/* border: 3px solid orange; */
+	background-color: #66CC00;
+	z-index: 1002;
+	overflow: hidden;
+}
+
+.failed_content {
+	display: none;
+	position: absolute;
+	top: 50%;
+	left: 36%;
+	width: 27%;
+	height: 70px;
+	padding: 12px;
+	/* border: 3px solid orange; */
+	background-color: #993333;
+	z-index: 1002;
+	overflow: hidden;
+	width: 27%;
+	height: 70px;
+	padding: 12px;
+}
+</style>
+</head>
+<body >
+	<div class="container">
+		<div class="row clearfix">
+			<div class="page-header">
+				<h1>
+					<small>Create</small>
+				</h1>
+			</div>
+
+			<div class="row">
+				<div class="col-xs-6 ">
+					<label for="host_name" class="col-sm-2 control-label">Alias</label>
+					<div class="col-sm-10">
+						<input type="text" class="form-control" id="host_name"
+							placeholder="请输入Alias" style="width: 200px;" value=""
+							onblur="host_name_myfunction()"> <input
+							id="host_name_hid" hidden="hidden" value="0"> <input
+							id="host_name_verify_status" hidden="hidden" value="0"> <span
+							class="red"> <span id="host_name_examine" class="hidden">Host已存在！</span>
+							<span id="host_name_format" class="hidden">格式验证失败:仅支持字母数字以及下划线，且以字母开头</span>
+						</span>
+					</div>
+					<div class="form-group">
+						<label for="host_iqn" class="col-sm-2 control-label">IQN</label>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" id="host_iqn"
+								placeholder="请输入IQN" style="width: 200px;" value=""
+								onblur="iqn_myfunction()"> <input id="host_iqn_hid"
+								hidden="hidden" value="0"> <input
+								id="host_iqn_verify_status" hidden="hidden" value="0"> <span
+								class="red"> <span id="iqn_format" class="hidden">IQN正确格式:
+									iqn.yyyy-mm.naming-authority:unique name</span>
+							</span>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-offset-2 col-sm-10">
+							<button type="button" class="btn btn-default" name="host_create"
+								id="host_create">Create</button>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-6 "></div>
+			</div>
+		</div>
+		<div class="row clearfix">
+			<div class="page-header">
+				<h1>
+					<small>Show</small>
+				</h1>
+			</div>
+			<div class="row">
+				<div class="col-xs-8 ">
+					<table id="Portal_Table" class="table table-hover table-bordered"
+						border="1">
+						<thead>
+							<tr>
+								<th style="width: 100px;">Host</th>
+								<th>IQN</th>
+								<th style="width: 200px;">操作</th>
+							</tr>
+						</thead>
+						<tbody id="Portal_Table_Show">
+						</tbody>
+					</table>
+
+				</div>
+				<div class="col-xs-4 "></div>
+			</div>
+		</div>
+	</div>
+	<div id="light_success" class="white_content">
+		<p id="P_text_success"
+			style="text-align: center; font-size: 30px; color: gray;"></p>
+	</div>
+	<div id="light_failed" class="failed_content">
+		<p id="P_text_failed"
+			style="text-align: center; font-size: 30px; color: oldlace;"></p>
+	</div>
+	<div id="fade" class="black_overlay"></div>
+
+	<!-- 模态框 1-->
+	<div class="modal fade" id="host_model" data-backdrop="static"
+		role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" align="center">Host 修改</h4>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-xs-3 "></div>
+						<div class="col-xs-7 ">
+							<div class="input-group">
+								<span class="input-group-addon">Host</span> <input type="text"
+									class="form-control" id="host_name_hidden">
+							</div>
+							<br>
+							<div class="input-group">
+								<span class="input-group-addon">IQN</span> <input type="text"
+									class="form-control" id="host_iqn_hidden">
+							</div>
+
+						</div>
+						<div class="col-xs-3 "></div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal"
+						onclick="myrefresh(this);">关闭</button>
+					<button type="button" class="btn btn-default"
+						onclick="affirm_modifiy(this);">修改</button>
+					<!-- 					<button type="button" class="btn btn-default" id="affirm_modifiy" onclick="affirm_modifiy(this);">确认修改</button> -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 模态框2 -->
+	<div class="modal fade" id="host_info_model" data-backdrop="static"
+		role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" align="center">修改详情</h4>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-xs-2 "></div>
+						<div class="col-xs-8 ">
+							<p id="host_info_result"></p>
+						</div>
+						<div class="col-xs-2 "></div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal"
+						onclick="myrefresh_second(this);">关闭</button>
+					<button type="button" class="btn btn-default"
+						onclick="affirm_modifiy_second(this);">确认修改</button>
+					<!-- 					<button type="button" class="btn btn-default" id="affirm_modifiy" onclick="affirm_modifiy(this);">确认修改</button> -->
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 模态框3 -->
+	<div class="modal fade" id="host_delete_model" data-backdrop="static"
+		role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" align="center">删除详情</h4>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-xs-2 "></div>
+						<div class="col-xs-8 ">
+						 	<input id="host_delete_data" hidden="hidden">
+							<p id="host_delete_info"></p>
+						</div>
+						<div class="col-xs-2 "></div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal"
+						onclick="myrefresh_delete(this);">关闭</button>
+					<button type="button" class="btn btn-default"
+						onclick="affirm_delete(this);">确认删除</button>
+					<!-- 					<button type="button" class="btn btn-default" id="affirm_modifiy" onclick="affirm_modifiy(this);">确认修改</button> -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<!-- Scripts -->
+	<script type="text/javascript"
+		src="{{url_for('static',filename='assets/js/jquery.min.js')}}"></script>
+	<script type="text/javascript"
+		src="{{url_for('static',filename='bootstrap-3.3.7/dist/js/bootstrap.js')}}"></script>
+	<script type="text/javascript"
+		src="{{url_for('static',filename='bootstrap-select-1.12.4/dist/js/bootstrap-select.js')}}"></script>
+	<script type="text/javascript"
+		src="{{url_for('static',filename='personal/js/iSCSI-portal.js')}}"></script>
+	<script type="text/javascript"
+		src="{{url_for('static',filename='layui/layui.all.js')}}"></script>
+
+	<script type="text/javascript">
+
+
+
+</script>
+</body>
+</html>

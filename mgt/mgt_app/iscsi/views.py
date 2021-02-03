@@ -28,6 +28,7 @@ iscsi_blueprint.add_url_rule('/iscsi/hostgroup', view_func=model.IscsiHostGroup.
 
 iscsi_blueprint.add_url_rule('/iscsi/diskgroup', view_func=model.IscsiDiskGroup.as_view('iscsi_diskgroup'))
 iscsi_blueprint.add_url_rule('/iscsi/disk', view_func=model.IscsiDisk.as_view('iscsi_disk'))
+iscsi_blueprint.add_url_rule('/iscsi/portal', view_func=model.Iscsiportal.as_view('iscsi_portal'))
 
 
 
