@@ -865,7 +865,7 @@ class Portal():
             # 只执行了netmask进行修改，这种情况下只需要对vip的netmask进行修改就行
             try:
                 obj_ipadrr = IPaddr2()
-                obj_ipadrr.modify(name, ip)
+                obj_ipadrr.modify(name, ip, netmask)
 
                 obj_portblock = PortBlockGroup()
                 obj_portblock.modify(f'{name}_prtblk_on', ip, port)
@@ -885,7 +885,7 @@ class Portal():
 
                 try:
                     obj_ipadrr = IPaddr2()
-                    obj_ipadrr.modify(name, ip)
+                    obj_ipadrr.modify(name, ip, netmask)
 
                     obj_portblock = PortBlockGroup()
                     obj_portblock.modify(f'{name}_prtblk_on', ip, port)

@@ -10,16 +10,17 @@ omit =
 	process.py
 	test.py
 	conftest.py
+	consts.py
 
 [report]
 exclude_lines =
     class RollBack*
     def rollback*
-    def rb*
+    def rb_*
     elif status == 'NOT_STARTED':
     elif status == 'NETWORK_ERROR':
-    def restore*
-    def refresh*
+    def restore
+    def refresh
     def deco*
     raise TimeoutError*
 	p.terminate()*
@@ -33,7 +34,13 @@ exclude_lines =
     s.handle_exception()
     except TimeoutError:
     if RPL == 'yes':
+    if not answer in ['y', 'yes', 'Y', 'YES']:
     s.prt_log(f"SUCCESS\n{result['rst']}", 1)
+    raise consts.ReplayExit*
+    except consts.ReplayExit:
+    if not isFileExists(LOG_PATH+LOG_FILE_NAME):
+    except IndexError*
+    s.prt_log('Error, please check whether LINSTOR is normal.', 2)
 
 
 

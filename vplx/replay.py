@@ -259,7 +259,7 @@ class Replay():
             answer = input()
             if answer.isdecimal():
                 answer = int(answer)
-                if answer < Replay.num:
+                if answer < Replay.num and answer != 0:
                     print(Replay.specific_data[answer])
                 else:
                     print('Please enter the correct serial number')
@@ -308,6 +308,9 @@ class Replay():
         else:
             cmds = logdb.get_all_cmd()
 
+        if not cmds:
+            print('There is no command to replay')
+            return
         number_list = [str(i) for i in list(range(1, len(cmds) + 1))]
 
         print(f'transaction num : {len(cmds)}')

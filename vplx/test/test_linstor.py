@@ -7,6 +7,7 @@ class TestLinstor:
         self.ls = linstor.Linstor()
 
     def test_refine_linstor_node(self):
+        """测试能否正确格式化处理从 linstor 获取的 node 信息"""
         node = '''+-------------------------------------------------------+
 | Node   | NodeType | Addresses                | State  |
 |=======================================================|
@@ -16,6 +17,7 @@ class TestLinstor:
         assert node_result == [['ubuntu', 'COMBINED', '10.203.1.76:3366(PLAIN)', 'Online']]
 
     def test_refine_linstor_res(self):
+        """测试能否正确格式化处理从 linstor 获取的 resource 信息"""
         res = '''+---------------------------------------------------------------------------------------------------+
 | Node   | Resource | StoragePool | VolNr | MinorNr | DeviceName    | Allocated | InUse  |    State |
 |===================================================================================================|
@@ -26,6 +28,7 @@ class TestLinstor:
             ['ubuntu', 'res_a', 'pool_a', '0', '1000', '/dev/drbd1000', '12MiB', 'Unused', 'UpToDate']]
 
     def test_refine_linstor_sp(self):
+        """测试能否正确格式化处理从 linstor 获取的 storagepool 信息"""
         sp = '''+-----------------------------------------------------------------------------------------------------------+
 | StoragePool          | Node   | Driver   | PoolName | FreeCapacity | TotalCapacity | CanSnapshots | State |
 |===========================================================================================================|
@@ -36,6 +39,7 @@ class TestLinstor:
 
     # 主要测这个函数能不能跑通？这个函数是根据cmd调用上面的函数，上面的函数已经从node/res/sp的方面都进行了读取测试
     def test_get_linstor_data(self):
+        """测试从 listor 能否正常获取数据"""
         node = self.ls.get_linstor_data('linstor --no-color --no-utf8 n l')
         res = self.ls.get_linstor_data('linstor --no-color --no-utf8 r lv')
         sp = self.ls.get_linstor_data('linstor --no-color --no-utf8 sp l')

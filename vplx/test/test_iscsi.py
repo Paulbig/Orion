@@ -2,11 +2,11 @@
 # import sys
 import time
 from unittest.mock import patch
-
 import pytest
 
 # import iscsi_json
-import iscsi_json
+# import execute
+# import iscsi_json
 from execute import iscsi
 import subprocess
 from execute.crm import execute_crm_cmd
@@ -20,8 +20,8 @@ class TestDisk:
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
         self.disk = iscsi.Disk()
 
-
     def teardown_class(self):
+        print('\n------teardown-------')
         subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
         subprocess.run('python3 vtel.py stor r d res_test2 -y', shell=True)
         subprocess.run('python3 vtel.py stor r s', shell=True)
@@ -30,146 +30,58 @@ class TestDisk:
         self.disk.show('all')
 
     # 根据 linstor 资源更新 disk，无传入参数，返回 disks 字典(可能为空)
-    def test_update_disk(self):
-        """该方法根据 linstor 资源更新 disk，测试用例包括获取非空字典/空字典"""
-        assert self.disk.update_disk() == {'res_test1': '/dev/drbd1000', 'res_test2': '/dev/drbd1006'}
+    def test_update_disk(self, mocker):
+        """该方法根据 linstor 资源更新 disk，测试用例包括：获取非空字典/空字典"""
+        assert len(self.disk.update_disk()) >= 2
         # 清空 disk
-        subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
-        subprocess.run('python3 vtel.py stor r d res_test2 -y', shell=True)
-        subprocess.run('python3 vtel.py stor r s', shell=True)
-        assert self.disk.update_disk() == {}
+        # subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
+        # subprocess.run('python3 vtel.py stor r d res_test2 -y', shell=True)
+        # subprocess.run('python3 vtel.py stor r s', shell=True)
+        # mocker.patch.object(iscsi.Disk.update_disk, 'linstor_res', [])
+        mocker.patch.object(iscsi.Disk, 'update_disk', return_value=[])
+        assert self.disk.update_disk() == []
 
     def test_show(self):
-        """展示disk"""
-        subprocess.run('python3 vtel.py stor r c res_test1 -s 10m -a -num 1', shell=True)
-        subprocess.run('python3 vtel.py stor r c res_test2 -s 10m -a -num 1', shell=True)
-        subprocess.run('python3 vtel.py iscsi d s', shell=True)
-        assert self.disk.show('all') == [['res_test1', '/dev/drbd1000'], ['res_test2', '/dev/drbd1006']]
-        assert self.disk.show('res_test1') == [['res_test1', '/dev/drbd1000']]
+        """展示disk，测试用例包括：'all'/'res_name'/不存在资源"""
+        # subprocess.run('python3 vtel.py stor r c res_test1 -s 10m -a -num 1', shell=True)
+        # subprocess.run('python3 vtel.py stor r c res_test2 -s 10m -a -num 1', shell=True)
+        # subprocess.run('python3 vtel.py iscsi d s', shell=True)
+        assert len(self.disk.show('all')) >= 2
+        assert self.disk.show('res_test1')[0][0] == 'res_test1'
         # 不存在
         assert self.disk.show('res_test3') == []
-
-    # Disk 类变动下列方法已修改为 show
-    # # 获取 linstor res
-    # def test_get_all_disk(self):
-    #     assert 'res_test1' in self.disk.get_all_disk()
-    #     assert 'res_test2' in self.disk.get_all_disk()
-    #
-    # # 这个函数应该明确获得指定disk,如果没有获得指定disk则return None
-    # def test_get_spe_disk(self):
-    #     assert self.disk.get_spe_disk('res_test1')
-    #     assert self.disk.get_spe_disk('res_test') is None
-    #
-    # # 该函数没有返回值，调用了本模块get_all_disk()和sundry的show_iscsi_data()
-    # def test_show_all_disk(self):
-    #     assert self.disk.show_all_disk() is None
-    #
-    # # 该函数没有返回值，调用了本模块get_spe_disk()和sundry的show_iscsi_data()
-    # def test_show_spe_disk(self):
-    #     assert self.disk.show_spe_disk('res_test') is None
 
 
 class TestHost:
 
     def setup_class(self):
-        # subprocess.run('python3 vtel.py iscsi h c test_host iqn.2020-04.feixitek.com:pytest0001', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h c test_host_hg iqn.2020-04.feixitek.com:pytest0991', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h s', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg c test_hg test_host_hg', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h s', shell=True)
+        subprocess.run('python3 vtel.py stor r c res_test1 -s 10m -a -num 1', shell=True)
         self.host = iscsi.Host()
         self.hostg = iscsi.HostGroup()
+        self.diskg = iscsi.DiskGroup()
+        self.map = iscsi.Map()
         self.host.create('test_host', 'iqn.2020-04.feixitek.com:pytest001')
-        self.host.create('test_host_hg', 'iqn.2020-04.feixitek.com:pytest0991')
+        self.host.create('test_host_hg1', 'iqn.2020-04.feixitek.com:pytest0991')
+        self.host.create('test_host_hg2', 'iqn.2020-04.feixitek.com:pytest0992')
+        self.host.create('test_host_hg3', 'iqn.2020-04.feixitek.com:pytest0993')
+
         self.host.show('all')
-        self.hostg.create('test_hg', ['test_host_hg'])
+        self.hostg.create('test_hg1', ['test_host_hg1', 'test_host_hg2'])
+        self.hostg.create('test_hg2', ['test_host_hg3'])
+        self.diskg.create('test_dg', ['res_test1'])
+        self.map.create('test_map', ['test_hg1', 'test_hg2'], ['test_dg'])
 
     def teardown_class(self):
-        # subprocess.run('python3 vtel.py iscsi hg d test_hg -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host_hg -y', shell=True)
-        self.hostg.delete('test_hg')
-        self.host.delete('test_host')
-        self.host.delete('test_host_hg')
+        print('\n------teardown-------')
         self.host.show('all')
-
-    # # 已存在返回 None ，新建成功返回 True
-    # def test_create_host(self):
-    #     # 存在
-    #     with patch('builtins.print') as terminal_print:
-    #         self.host.create_host('test_host', 'iqn.2020-04.feixitek.com:pytest001')
-    #         terminal_print.assert_called_with('Fail! The Host test_host already existed.')
-    #     # 不存在，但iqn 格式不正确（要未新建过的host名才会判断iqn格式）
-    #     with pytest.raises(SystemExit) as exsinfo:
-    #         with patch('builtins.print') as terminal_print:
-    #             self.host.create_host('test_host3', 'iqn1')
-    #             terminal_print.assert_called_with('The format of IQN is wrong. Please confirm and fill in again.')
-    #     assert exsinfo.type == SystemExit
-    #     # 新建成功
-    #     assert self.host.create_host('test_host1', 'iqn.2020-04.feixitek.com:pytest01')
-    #
-    # # 已存在返回该host ，不存在返回None
-    # def test_get_spe_host(self):
-    #     assert self.host.get_spe_host('test_host')
-    #     assert not self.host.get_spe_host('test_host2')
-    #
-    # # 该函数没有返回值，调用了本模块get_all_host()和sundry的show_iscsi_data()
-    # def test_show_all_host(self):
-    #     # 等价于 assert not None
-    #     assert not self.host.show_all_host()
-    #     # self.hostgroup.create_hostgroup('test_dg', ['test_host_dg'])
-    #     # self.hostgroup.show_all_hostgroup()
-    #
-    # # 该函数没有返回值，调用了本模块get_spe_host()和sundry的show_iscsi_data()
-    # def test_show_spe_host(self):
-    #     # 等价于 assert not None
-    #     assert not self.host.show_spe_host('test_host_hg')
-    #
-    # def test_modify_host(self):
-    #     # 不存在 host
-    #     with pytest.raises(SystemExit) as exsinfo:
-    #         with patch('builtins.print') as terminal_print:
-    #             self.host.modify_host('test_hostABC', 'iqn.2020-04.feixitek.com:pytest0999')
-    #             terminal_print.assert_called_with('不存在这个host可以去进行修改')
-    #     assert exsinfo.type == SystemExit
-    #     #
-    #
-    # # 1.先检查host 是否存在，不存在输出提示语句 2.再判断该host 是否已经配置在HostGroup里，已配置返回输出提示语句
-    # # 3.不满足前两个返回条件，删除后返回True
-    # def test_delete_host(self):
-    #     # 不存在
-    #     print('delete_host test_funtion')
-    #     with patch('builtins.print') as terminal_print:
-    #         self.host.delete_host('test_hostABC')
-    #         terminal_print.assert_called_with('Fail! Can\'t find test_hostABC')
-    #     # 删除已存在而且没有配置在HostGroup中的host
-    #     assert self.host.delete_host('test_host1')
-    #     # 已配置用例有待添加
-    #     with patch('builtins.print') as terminal_print:
-    #         self.host.delete_host('test_host_hg')
-    #         terminal_print.assert_called_with('Fail! The host in ... hostgroup.Please delete the hostgroup first')
-    #     # self.hostgroup.delete_hostgroup('hg1')
-    #
-    # # 返回所有host，如果host为空，返回{},否则返回host字典
-    # def test_get_all_host(self):
-    #     self.hostgroup = iscsi.HostGroup()
-    #     #
-    #     # self.host.delete_host('test_host_hg')
-    #     # host 不为空
-    #     assert self.host.get_all_host()
-    #     # host 为空
-    #     print('delete diskgroup：')
-    #     self.hostgroup.delete_hostgroup('test_hg')
-    #     print('first delete host：')
-    #     self.host.delete_host('test_host')
-    #     print('seconde delete host：')
-    #     self.host.delete_host('test_host_hg')
-    #     self.host.show_all_host()
-    #     self.host.get_spe_host('test_host_hg')
-    #     assert self.host.get_all_host() == {}
+        execute_crm_cmd('crm res stop res_test1')
+        execute_crm_cmd('crm conf del res_test1')
+        subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
+        subprocess.run('python3 vtel.py iscsi d s', shell=True)
 
     # -------------  add -------------- 2020.12.28
     def test_check_iqn(self):
+        """检查iqn格式，测试用例包括：格式正确/格式不正确"""
         # ----- modify ------ 2021.01.11
         assert self.host._check_iqn('iqn1') is False
         assert self.host._check_iqn('iqn.2020-04.feixitek.com:pytest01') is True
@@ -178,7 +90,7 @@ class TestHost:
 
     # 已存在返回 None ，iqn 格式不对返回 None ，新建成功返回 True
     def test_create(self):
-        """创建host，测试用例包括 host 已存在/iqn格式不正确/创建成功"""
+        """创建host，测试用例包括：host 已存在/iqn格式不正确/创建成功"""
         # 已存在
         with patch('builtins.print') as terminal_print:
             self.host.create('test_host', 'iqn.2020-04.feixitek.com:pytest001')
@@ -192,75 +104,93 @@ class TestHost:
 
     def test_show(self):
         """展示host，测试用例包括：全部 host 展示/展示指定 host /指定 host 不存在"""
-        assert len(self.host.show('all')) >= 1
+        assert len(self.host.show('all')) >= 3
         assert self.host.show('test_host1') == [['test_host1', 'iqn.2020-04.feixitek.com:pytest01']]
         # 不存在
         assert self.host.show('test_host3') == []
 
     # 修改失败：1.不存在，return None 输入提示语句；修改成功：
-    def test_modify(self):
-        """修改host，测试用例包括 host 不存在/修改成功"""
+    def test_modify(self, monkeypatch):
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        """修改host，测试用例包括：host 不存在/修改成功"""
         # 不存在 host
         with patch('builtins.print') as terminal_print:
             self.host.modify('test_hostABC', 'iqn.2020-04.feixitek.com:pytest0999')
             terminal_print.assert_called_with('Fail! Can\'t find test_hostABC')
         # 修改成功
         assert not self.host.modify('test_host1', 'iqn.2020-04.feixitek.com:pytest0999')
+        # assert not self.host.modify('test_host1', 'iqn')
+
+    @pytest.fixture()
+    def handle_data(self, monkeypatch):
+        # 数据处理
+        yield
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.diskg.delete('test_dg')
+        self.host.delete('test_host')
 
     # 删除失败：1.不存在，return None 输入提示语句 2.已配置在 HostGroup，return None 输出提示语句；删除成功： return True
-    def test_delete(self):
-        """删除 host，测试用例包括 host 不存在/ host 已配置在 HostGroup 中/删除成功"""
+    def test_delete(self, monkeypatch, handle_data):
+        """删除 host，测试用例包括：host 不存在/ host 已配置在 HostGroup 中/删除成功"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 不存在
-        print('delete_host test_funtion')
         with patch('builtins.print') as terminal_print:
             self.host.delete('test_hostABC')
-            terminal_print.assert_called_with('Fail! Can\'t find test_hostABC')
+            terminal_print.assert_called_with('Fail！Can\'t find test_hostABC')
         # 删除已存在而且没有配置在HostGroup中的host
-        assert self.host.delete('test_host1')
-        # 已配置 HostGroup
         with patch('builtins.print') as terminal_print:
-            self.host.delete('test_host_hg')
-            terminal_print.assert_called_with('Fail! The host in ... hostgroup.Please delete the hostgroup first')
+            self.host.delete('test_host1')
+        terminal_print.assert_called_with('Delete test_host1 successfully')
+        # 已配置 HostGroup , 能删除
+        with patch('builtins.print') as terminal_print:
+            self.host.delete('test_host_hg1')
+            terminal_print.assert_called_with('Delete test_host_hg1 successfully')
+        # 同时如果配置该host的hg是最后一个同时删除hg
+        with patch('builtins.print') as terminal_print:
+            self.host.delete('test_host_hg2')
+            terminal_print.assert_called_with('Delete test_host_hg2 successfully')
+        assert self.hostg.show('test_hg1') == []
+        # 该 host 是 test_map 的 hostgroup 唯一成员，删除后该hostgroup被删除，同时test_map也被删除
+        with patch('builtins.print') as terminal_print:
+            self.host.delete('test_host_hg3')
+            terminal_print.assert_called_with('Delete test_host_hg3 successfully')
+        assert self.hostg.show('test_hg2') == []
+        assert self.map.show('test_map') == []
+        self.diskg.show('all')
 
 
 class TestDiskGroup:
 
     def setup_class(self):
         subprocess.run('python3 vtel.py stor r c res_test -s 10m -a -num 1', shell=True)
-        subprocess.run('python3 vtel.py stor r c res_a -s 10m -a -num 1', shell=True)
+        subprocess.run('python3 vtel.py stor r c res_test1 -s 10m -a -num 1', shell=True)
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h c test_host iqn.2020-04.feixitek.com:pytest0999', shell=True)
-        # subprocess.run('python3 vtel.py iscsi d s', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg c test_dg res_test', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg c test_hg test_host', shell=True)
-        # 创建 Map
-        # subprocess.run('python3 vtel.py iscsi m c map1 -dg test_dg -hg test_hg', shell=True)
-        # subprocess.run('python3 vtel.py iscsi m s', shell=True)
         self.host = iscsi.Host()
         self.hostg = iscsi.HostGroup()
         self.diskg = iscsi.DiskGroup()
         self.map = iscsi.Map()
         self.host.create('test_host', 'iqn.2020-04.feixitek.com:pytest0999')
-        self.diskg.create('test_dg', ['res_test'])
+        self.diskg.create('test_dg', ['res_test', 'res_test1'])
+        self.diskg.create('test_dg2', ['res_test1'])
+        self.diskg.show('all')
+
         self.hostg.create('test_hg', ['test_host'])
         self.map.create('map1', ['test_hg'], ['test_dg'])
+        self.map.show('all')
 
     def teardown_class(self):
-        print('teardown')
+        print('\n------teardown-------')
+        # 需要在前面删,不然在res删除之后删json文件不一致或者可以先同步res再删
         try:
             execute_crm_cmd('crm res stop res_test')
             execute_crm_cmd('crm conf del res_test')
-            execute_crm_cmd('crm res stop res_a')
-            execute_crm_cmd('crm conf del res_a')
+            execute_crm_cmd('crm res stop res_test1')
+            execute_crm_cmd('crm conf del res_test1')
         except Exception:
             print(Exception)
         finally:
             subprocess.run('python3 vtel.py stor r d res_test -y', shell=True)
-            subprocess.run('python3 vtel.py stor r d res_a -y', shell=True)
-        subprocess.run('python3 vtel.py iscsi d s', shell=True)
-
-        self.hostg.delete('test_hg')
-        self.host.delete('test_host')
+            subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
 
     # # 1.判断 DiskGroup 是否存在，存在返回 None 2.遍历 disk 列表，若发现 disk 不存在返回 None 3.创建成功返回 True
@@ -323,83 +253,78 @@ class TestDiskGroup:
         assert self.diskg.create('test_dg1', ['res_test'])
 
     def test_show(self):
-        """展示 diskgroup"""
-        assert self.diskg.show('all') == [['test_dg', 'res_test'], ['test_dg1', 'res_test']]
+        """展示 diskgroup，测试用例包括：'all'/'dg_name'/不存在的dg"""
+        assert len(self.diskg.show('all')) >= 2
         assert self.diskg.show('test_dg1') == [['test_dg1', 'res_test']]
         assert self.diskg.show('test_dg0') == []
 
-    def test_delete(self):
-        """删除 diskgroup，测试用例包括：diskg不存在，删除失败/已配置在map中，删除失败/删除成功"""
+    def test_delete(self, monkeypatch):
+        """删除 diskgroup，测试用例包括：diskg不存在，删除失败/已配置在map中，删除成功/删除成功"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         with patch('builtins.print') as terminal_print:
-            self.diskg.delete('test_dg2')
-            terminal_print.assert_called_with('Fail! Can\'t find test_dg2')
-        # 保留测试用例，该分支有bug
+            self.diskg.delete('test_dg0')
+            terminal_print.assert_called_with('Fail! Can\'t find test_dg0')
+        # 已配置在map中
         with patch('builtins.print') as terminal_print:
-            # self.map.show('map1')
             self.diskg.delete('test_dg')
-            terminal_print.assert_called_with('Fail! The diskgroup already map,Please delete the map')
+            terminal_print.assert_called_with('Delete test_dg success!')
+            assert self.map.show('map1') == []
         with patch('builtins.print') as terminal_print:
             self.diskg.delete('test_dg1')
-            terminal_print.assert_called_with('Delete success!')
+            terminal_print.assert_called_with('Delete test_dg1 success!')
 
     # -----------   add  -----------------  2020.12.28
-    def test_add_disk(self):
-        """diskgroup 新增 disk"""
+    def test_add_disk(self,monkeypatch):
+        """diskgroup 新增 disk，测试用例包括：新增成功/新增失败：使用不存在的dg；使用已存在dg的res资源；使用不存在的res资源"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.diskg.create('test_dg', ['res_test'])
+        self.map.create('map1', ['test_hg'], ['test_dg', 'test_dg2'])
         # 新增成功
-        assert not self.diskg.add_disk('test_dg', ['res_a'])
+        assert not self.diskg.add_disk('test_dg', ['res_test1'])
         # 不存在
         with patch('builtins.print') as terminal_print:
-            self.diskg.add_disk('test_dg2', ['res_a'])
-            terminal_print.assert_called_with('Fail！Can\'t find test_dg2')
+            self.diskg.add_disk('test_dg0', ['res_0'])
+            terminal_print.assert_called_with('Fail！Can\'t find test_dg0')
         with patch('builtins.print') as terminal_print:
             self.diskg.add_disk('test_dg', ['res_test'])
-            terminal_print.assert_called_with('res_test已存在test_dg中')
+            terminal_print.assert_called_with('res_test already exists in test_dg')
         with patch('builtins.print') as terminal_print:
             self.diskg.add_disk('test_dg', ['res_O'])
-            terminal_print.assert_called_with('json文件中不存在res_O，无法进行添加')
+            terminal_print.assert_called_with('The disk does not exist in the configuration file and cannot be added')
 
-    def test_remove_disk(self):
-        """diskgroup 移除 disk"""
-        print(self.diskg.show('test_dg'))
+    @pytest.fixture()
+    def handle_data(self, monkeypatch):
+        # 数据处理
+        yield
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.host.delete('test_host')
+
+    def test_remove_disk(self, monkeypatch, handle_data):
+        """diskgroup 移除 disk，测试用例包括：移除成功/移除失败：使用不存在的dg；使用不存在dg的res资源/移除全部的res会删除该dg"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         assert not self.diskg.remove_disk('test_dg', ['res_test'])
         # 移除失败
         with patch('builtins.print') as terminal_print:
-            self.diskg.remove_disk('test_dg2', ['res_a'])
-            terminal_print.assert_called_with('Fail！Can\'t find test_dg2')
+            self.diskg.remove_disk('test_dg0', ['res_test1'])
+            terminal_print.assert_called_with('Fail！Can\'t find test_dg0')
         with patch('builtins.print') as terminal_print:
             self.diskg.remove_disk('test_dg', ['res_O'])
-            terminal_print.assert_called_with('test_dg中不存在成员res_O，无法进行移除')
-        # 只有一个资源移除后是否会删掉该dg , 会移除该 hg 和 所配置该 hg 的map
-        with patch('builtins.print') as terminal_print:
-            self.diskg.remove_disk('test_dg', ['res_a'])
-            terminal_print.assert_called_with('相关的map已经修改/删除')
-        # self.map.delete_map('map1')
-        # self.diskg.delete_diskgroup('test_dg')
-
-    # # 返回所有 DiskGroup，如果为 DiskGroup 空，返回{},否则返回 DiskGroup 非空字典
-    # def test_get_all_diskgroup(self):
-    #     # DiskGroup 不为空
-    #     assert self.diskg.create_diskgroup('test_dg1', ['res_test'])
-    #     print('show all diskgroup')
-    #     self.diskg.show_all_diskgroup()
-    #     assert self.diskg.get_all_diskgroup()
-    #     # DiskGroup 为空
-    #     # self.map.delete_map('map1')
-    #     self.diskg.delete_diskgroup('test_dg1')
-    #     assert self.diskg.get_all_diskgroup() == {}
+            terminal_print.assert_called_with('res_O does not exist in test_dg and cannot be removed')
+        # 只有一个资源移除后是否会删掉该dg , 会移除该 dg 和 所配置该 dg 的map
+        self.diskg.remove_disk('test_dg', ['res_test1'])
+        assert self.diskg.show('test_dg') == []
+        # 该 map 还剩下一个 test_dg2，移除 test_dg2 的 res_test1 map会被删除
+        self.diskg.remove_disk('test_dg2', ['res_test1'])
+        assert self.diskg.show('test_dg2') == []
+        assert self.map.show('map1') == []
+        # 这里是输出删除 Iscsilogicalunit 提示语句
 
 
 class TestHostGroup:
 
     def setup_class(self):
-        # 请注意对象实例化与命令运行顺序
-        # subprocess.run('python3 vtel.py iscsi h c test_host1 iqn.2020-04.feixitek.com:pytest01', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h c test_host2 iqn.2020-04.feixitek.com:pytest002', shell=True)
         subprocess.run('python3 vtel.py stor r c res_test -s 10m -a -num 1', shell=True)
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg c test_dg res_test', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg c test_hg test_host1', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg s', shell=True)
         # 创建 Map
         # subprocess.run('python3 vtel.py iscsi m c map1 -dg test_dg -hg test_hg', shell=True)
         # subprocess.run('python3 vtel.py iscsi m s', shell=True)
@@ -409,21 +334,14 @@ class TestHostGroup:
         self.diskg = iscsi.DiskGroup()
         self.host.create('test_host1', 'iqn.2020-04.feixitek.com:pytest01')
         self.host.create('test_host2', 'iqn.2020-04.feixitek.com:pytest002')
+
         self.diskg.create('test_dg', ['res_test'])
         self.hostg.create('test_hg', ['test_host1'])
+        self.hostg.create('test_hg2', ['test_host2'])
         self.map.create('map1', ['test_hg'], ['test_dg'])
 
     def teardown_class(self):
-        # subprocess.run('python3 vtel.py iscsi m d map1 -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg d test_dg -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg d test_hg -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host1 -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host2 -y', shell=True)
-        # self.map.delete_map('map1')
-        self.diskg.delete('test_dg')
-        self.hostg.delete('test_hg')
-        self.host.delete('test_host1')
-        self.host.delete('test_host2')
+        print('\n------teardown-------')
         execute_crm_cmd('crm res stop res_test')
         execute_crm_cmd('crm conf del res_test')
         subprocess.run('python3 vtel.py stor r d res_test -y', shell=True)
@@ -479,7 +397,7 @@ class TestHostGroup:
     def test_create(self):
         """创建HostGroup，测试用例包括：HostGroup已存在，创建失败/所配置的 host 不存在，创建失败/创建成功"""
         # 已存在 HostGroup 测试用例
-        print('test_hg', self.hostg.show('test_hg'))
+        # print('test_hg', self.hostg.show('test_hg'))
         with patch('builtins.print') as terminal_print:
             self.hostg.create('test_hg', ['test_host1'])
             terminal_print.assert_called_with('Fail! The HostGroup test_hg already existed.')
@@ -491,59 +409,80 @@ class TestHostGroup:
         assert self.hostg.create('test_hg1', ['test_host1'])
 
     def test_show(self):
-        """展示HostGroup"""
+        """展示 HostGroup，测试用例包括：'all'/'hg_name'/不存在hg"""
         # assert self.hostg.show('all') == [['test_hg', 'test_host1'], ['test_hg1', 'test_host1']]
         assert len(self.hostg.show('all')) >= 1
         assert self.hostg.show('test_hg1') == [['test_hg1', 'test_host1']]
         assert self.hostg.show('test_hg0') == []
 
-    def test_delete(self):
+    def test_delete(self, monkeypatch):
         """删除 HostGroup，测试用例包括：HostGroup不存在，删除失败/已配置在map中，删除失败/删除成功"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        # assert self.hostg.create('test_hg1', ['test_host1'])
         # 不存在
         with patch('builtins.print') as terminal_print:
-            self.hostg.delete('test_hg2')
-            terminal_print.assert_called_with('Fail! Can\'t find test_hg2')
+            self.hostg.delete('test_hg0')
+            terminal_print.assert_called_with('Fail! Can\'t find test_hg0')
         # 已配置在map中
         with patch('builtins.print') as terminal_print:
             self.hostg.delete('test_hg')
-            terminal_print.assert_called_with('Fail! The hostgroup already map,Please delete the map')
+            terminal_print.assert_called_with('Delete test_hg success!')
+        assert self.map.show('map1') == []
         # 删除成功
         with patch('builtins.print') as terminal_print:
             self.hostg.delete('test_hg1')
-            terminal_print.assert_called_with('Delete success!')
+            terminal_print.assert_called_with('Delete test_hg1 success!')
+        self.hostg.create('test_hg', ['test_host1'])
 
     # --------------------- add  --------------  2020.12.28
-
-    def test_add_host(self):
-        """hostgroup 新增 host"""
+    def test_add_host(self, monkeypatch):
+        """hostgroup 新增 host,测试用例包括：新增 host 成功/新增失败：新增 host 不存在/新增 host 已存在于该 hostgroup/该 hostgroup 不存在"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.map.create('map1', ['test_hg', 'test_hg2'], ['test_dg'])
         # 存在
         assert not self.hostg.add_host('test_hg', ['test_host2'])
         # 不存在
         with patch('builtins.print') as terminal_print:
-            self.hostg.add_host('test_hg2', ['test_host2'])
-            terminal_print.assert_called_with('Fail！Can\'t find test_hg2')
+            self.hostg.add_host('test_hg0', ['test_host2'])
+            terminal_print.assert_called_with('Fail！Can\'t find test_hg0')
         with patch('builtins.print') as terminal_print:
             self.hostg.add_host('test_hg', ['test_host1'])
-            terminal_print.assert_called_with('test_host1已存在test_hg中')
+            terminal_print.assert_called_with('test_host1 already exists in test_hg')
         with patch('builtins.print') as terminal_print:
             self.hostg.add_host('test_hg', ['test_host0'])
-            terminal_print.assert_called_with('json文件中不存在test_host0，无法进行添加')
+            terminal_print.assert_called_with('test_host0 does not exist in the configuration file and cannot be added')
 
-    def test_remove_host(self):
-        """hostgroup 移除 host"""
+    @pytest.fixture()
+    def handle_data(self, monkeypatch):
+        # 数据处理
+        yield
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.diskg.delete('test_dg')
+        self.host.delete('test_host1')
+        self.host.delete('test_host2')
+
+    def test_remove_host(self, monkeypatch, handle_data):
+        """hostgroup 移除 host，测试用例包括：移除 host 成功/新增失败：移除 host 不存在/移除 host 不存在于该 hostgroup/该 hostgroup 不存在/移除该 hostgroup最后一名成员"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 存在
         assert not self.hostg.remove_host('test_hg', ['test_host2'])
         # 不存在
         with patch('builtins.print') as terminal_print:
-            self.hostg.remove_host('test_hg2', ['test_host2'])
-            terminal_print.assert_called_with('Fail！Can\'t find test_hg2')
+            self.hostg.remove_host('test_hg0', ['test_host2'])
+            terminal_print.assert_called_with('Fail！Can\'t find test_hg0')
         with patch('builtins.print') as terminal_print:
             self.hostg.remove_host('test_hg', ['test_host0'])
-            terminal_print.assert_called_with('test_hg中不存在成员test_host0，无法进行移除')
+            terminal_print.assert_called_with('test_host0 does not exist in test_hg and cannot be removed')
         # hg 的 host 全部移除，配置了该 hg 的 map 同时被删除
-        with patch('builtins.print') as terminal_print:
-            self.hostg.remove_host('test_hg', ['test_host1'])
-            terminal_print.assert_called_with('相关的map已经修改/删除')
+        # with 结构中会屏蔽输出
+        # 移除 test_hg 最后一个 host，test_hg会被删除
+        self.hostg.remove_host('test_hg', ['test_host1'])
+        assert self.hostg.show('test_hg') == []
+        # map1 中 hostgroup 还有最后一个成员 test_hg2 ，test_hg2中还有最后一个成员 test_host2
+        self.hostg.remove_host('test_hg2', ['test_host2'])
+        assert self.hostg.show('test_hg2') == []
+        assert self.map.show('map1') == []
+        # 输出使用 disk iscsilogicalunit 删除提示
 
     # # 返回所有 HostGroup，如果为 HostGroup 空，返回{},否则返回 HostGroup 非空字典
     # def test_get_all_hostgroup(self):
@@ -560,19 +499,9 @@ class TestMap:
     def setup_class(self):
         # 创建没有被使用过的disk
         subprocess.run('python3 vtel.py stor r c res_test1 -s 10m -a -num 1', shell=True)
-        # 配置到没有被使用的diskgroup
-        # subprocess.run('python3 vtel.py iscsi dg c test_dg1 res_test1 ', shell=True)
-        # # 创建没有被使用的 host
-        # subprocess.run('python3 vtel.py iscsi h c test_host1 iqn.2020-04.feixitek.com:pytest0101', shell=True)
-        # # 配置到没有被使用的hostgroup
-        # subprocess.run('python3 vtel.py iscsi hg c test_hg1 test_host1', shell=True)
 
         subprocess.run('python3 vtel.py stor r c res_test -s 10m -a -num 1', shell=True)
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg c test_dg res_test', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h c test_host iqn.2020-04.feixitek.com:pytest01', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg c test_hg test_host', shell=True)
-        # subprocess.run('python3 vtel.py iscsi m c test_map -dg test_dg -hg test_hg', shell=True)
         self.host = iscsi.Host()
         self.hostg = iscsi.HostGroup()
         self.map = iscsi.Map()
@@ -586,21 +515,7 @@ class TestMap:
         self.map.create('test_map', ['test_hg'], ['test_dg'])
 
     def teardown_class(self):
-        # subprocess.run('python3 vtel.py iscsi m d test_map -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg d test_hg -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi hg d test_hg1 -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi h d test_host1 -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg d test_dg -y', shell=True)
-        # subprocess.run('python3 vtel.py iscsi dg d test_dg1 -y', shell=True)
-        self.map.delete_map('test_map')
-        self.hostg.delete('test_hg')
-        self.hostg.delete('test_hg1')
-        self.diskg.delete('test_dg1')
-        self.diskg.delete('test_dg')
-        self.host.delete('test_host')
-        self.host.delete('test_host1')
-
+        print('\n------teardown-------')
         execute_crm_cmd('crm res stop res_test')
         execute_crm_cmd('crm conf del res_test')
         execute_crm_cmd('crm res stop res_test1')
@@ -609,7 +524,6 @@ class TestMap:
         subprocess.run('python3 vtel.py stor r d res_test1 -y', shell=True)
 
         subprocess.run('python3 vtel.py iscsi d s', shell=True)
-
 
     # 函数已修改
     # # 1.map 是否存在/hostgroup是否存在/diskgroup是否存在
@@ -678,24 +592,9 @@ class TestMap:
     #     # 存在
     #     assert self.map.pre_check_delete_map('test_map1')
 
-    # ------- add -------   2020.12.18
-
-    # 函数已修改
-    # # 检查列表的每个成员hg/dg是否存在
-    # def test_checkout_exist(self):
-    #     # 调用 js 中的函数
-    #     # 这里不使用 not 的原因是看不出返回值是False/None
-    #     # 1.'HostGroup'类别，hg不存在
-    #     assert self.map.checkout_exist('HostGroup', ['test_hg1', 'test_hg0']) is False
-    #     # 1.'HostGroup'类别，hg存在
-    #     assert self.map.checkout_exist('HostGroup', ['test_hg', 'test_hg1']) is None
-    #     # 1.'DiskGroup'类别，hg不存在
-    #     assert self.map.checkout_exist('DiskGroup', ['test_dg', 'test_dg0']) is False
-    #     # 1.'DiskGroup'类别，dg存在
-    #     assert self.map.checkout_exist('DiskGroup', ['test_dg', 'test_dg1']) is None
-
     # ----------modify ----------- 2021.01.11
     def test_create(self):
+        """创建 Map，测试用例包括：Map 已存在，创建失败/所配置的 hostgroup 不存在，创建失败/所配置 diskgroup 不存在,创建失败/创建成功"""
         # 创建失败
         # map 已存在
         with pytest.raises(SystemExit) as exsinfo:
@@ -724,15 +623,15 @@ class TestMap:
         assert self.map.create('test_map3', ['test_hg1'], ['test_dg', 'test_dg1'])
 
     def test_show(self):
-        # assert self.map.show('all') == [['test_map', 'test_hg', 'test_dg'], ['test_map1', 'test_hg', 'test_dg'],
-        #                                 ['test_map2', 'test_hg1', 'test_dg'],
-        #                                 ['test_map3', 'test_hg1', 'test_dg test_dg1']]
-        assert len(self.map.show('all')) >= 1
+        """展示 Map，测试用例包括：'all'/'map_name'/不存在map"""
+        assert len(self.map.show('all')) >= 4
         assert self.map.show('test_map3') == [['test_map3', 'test_hg1', 'test_dg test_dg1']]
         assert self.map.show('test_map0') == []
 
     # 1.使用pre_check_delete_map检查，map 不存在返回 None，删除成功返回 True
-    def test_delete_map(self):
+    def test_delete_map(self, monkeypatch):
+        """删除 Map，测试用例包括：Map 不存在删除失败/删除成功"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 不存在
         with pytest.raises(SystemExit) as exsinfo:
             self.map.delete_map('test_map0')
@@ -741,7 +640,9 @@ class TestMap:
         assert self.map.delete_map('test_map3')
 
     # map modify -hg -a 调用
-    def test_add_hg(self):
+    def test_add_hg(self, monkeypatch):
+        """map 新增 hostgroup,测试用例包括：新增成功/新增失败：map 不存在/新增 hg 已存在于该 map 中/新增 hg 不存在 json 文件中"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 成功增加
         assert self.map.add_hg('test_map1', ['test_hg1']) is None
         # 1.map 不存在
@@ -751,42 +652,46 @@ class TestMap:
         # 2.hg 已存在 map 中
         with patch('builtins.print') as terminal_print:
             self.map.add_hg('test_map1', ['test_hg'])
-            terminal_print.assert_called_with('test_hg已存在test_map1中')
+            terminal_print.assert_called_with('test_hg already exists in test_map1')
         # 3.hg 不存在 json 文件中
         with patch('builtins.print') as terminal_print:
             self.map.add_hg('test_map1', ['test_hg0'])
-            terminal_print.assert_called_with('json文件中不存在test_hg0，无法进行添加')
+            terminal_print.assert_called_with('test_hg0 does not exist in the configuration file and cannot be added')
 
     # map modify -dg -a 调用
     # 1.map 是否存在
     # 2. dg 是否已存在在 map 中/ dg 是否存在 json 文件中
-    def test_add_dg(self):
+    def test_add_dg(self, monkeypatch):
+        """map 新增 diskgroup,测试用例包括：新增成功/新增失败：map 不存在/新增 dg 已存在于该 map 中/新增 dg 不存在 json 文件中"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 成功增加
         assert self.map.add_dg('test_map2', ['test_dg1']) is None
         # 1.map 不存在
         with patch('builtins.print') as terminal_print:
             self.map.add_dg('map0', ['test_dg1'])
             terminal_print.assert_called_with('Fail！Can\'t find map0')
-        # 2.hg 已存在 map 中
+        # 2.dg 已存在 map 中
         with patch('builtins.print') as terminal_print:
             self.map.add_dg('test_map2', ['test_dg'])
-            terminal_print.assert_called_with('test_dg已存在test_map2中')
-        # 3.hg 不存在 json 文件中
+            terminal_print.assert_called_with('test_dg already exists in test_map2')
+        # 3.dg 不存在 json 文件中
         with patch('builtins.print') as terminal_print:
             self.map.add_dg('test_map2', ['test_dg0'])
-            terminal_print.assert_called_with('json文件中不存在test_dg0，无法进行添加')
+            terminal_print.assert_called_with('test_dg0 does not exist in the configuration file and cannot be added')
 
     # map modify -hg -r 调用
     # 1.map 是否存在
     # 2.hg 是否存在于该 map 中
-    def test_remove_hg(self):
+    def test_remove_hg(self, monkeypatch):
+        """map 移除 hostgroup,测试用例包括：移除成功/移除失败：map 不存在/移除 hg 不存在于该 map 中/移除 map 中部分 hg/移除 map 的 hg 最后一位成员"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 1.map 不存在
         with patch('builtins.print') as terminal_print:
             self.map.remove_hg('map0', ['test_hg1'])
             terminal_print.assert_called_with('Fail！Can\'t find map0')
         with patch('builtins.print') as terminal_print:
             self.map.remove_hg('test_map1', ['test_hg0'])
-            terminal_print.assert_called_with('test_map1中不存在成员test_hg0，无法进行移除')
+            terminal_print.assert_called_with('test_hg0 does not exist in test_map1 and cannot be removed')
         # 成功移除
         # 移除 map 中 HostGroup 的某些 hg 值，该 map 不会被删除
         self.map.remove_hg('test_map1', ['test_hg'])
@@ -795,19 +700,34 @@ class TestMap:
         # 移除 map 中 HostGroup 的全部 hg 值，该 map 被删除
         with patch('builtins.print') as terminal_print:
             self.map.remove_hg('test_map1', ['test_hg1'])
-            terminal_print.assert_called_with('该test_map1已删除')
+            terminal_print.assert_called_with('test_map1 deleted')
+
+    @pytest.fixture()
+    def handle_data(self, monkeypatch):
+        # 数据处理
+        yield
+        monkeypatch.setattr('builtins.input', lambda: "y")
+        self.map.delete_map('test_map')
+        self.hostg.delete('test_hg')
+        self.hostg.delete('test_hg1')
+        self.diskg.delete('test_dg1')
+        self.diskg.delete('test_dg')
+        self.host.delete('test_host')
+        self.host.delete('test_host1')
 
     # map modify -dg -r 调用
     # 1.map 是否存在
     # 2.dg 是否存在于该 map 中
-    def test_remove_dg(self):
+    def test_remove_dg(self, monkeypatch,handle_data):
+        """map 移除 diskgroup,测试用例包括：移除成功/移除失败：map 不存在/移除 dg 不存在于该 map 中/移除 map 中部分 dg/移除 map 的 dg 最后一位成员"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         # 1.map 不存在
         with patch('builtins.print') as terminal_print:
             self.map.remove_dg('map0', ['test_dg1'])
             terminal_print.assert_called_with('Fail！Can\'t find map0')
         with patch('builtins.print') as terminal_print:
             self.map.remove_dg('test_map2', ['test_dg0'])
-            terminal_print.assert_called_with('test_map2中不存在成员test_dg0，无法进行移除')
+            terminal_print.assert_called_with('test_dg0 does not exist in test_map2 and cannot be removed')
         # 成功移除
         # 移除 map 中 HostGroup 的某些 dg 值，该 map 不会被删除
         self.map.remove_dg('test_map2', ['test_dg'])
@@ -816,7 +736,7 @@ class TestMap:
         # 移除 map 中 HostGroup 的全部 dg 值，该 map 被删除
         with patch('builtins.print') as terminal_print:
             self.map.remove_dg('test_map2', ['test_dg1'])
-            terminal_print.assert_called_with('该test_map2已删除')
+            terminal_print.assert_called_with('test_map2 deleted')
 
     # # 获取 map 并返回，map 为空返回 {},不为空返回非空字典
     # def test_get_all_map(self):
@@ -841,87 +761,106 @@ class TestPortal:
         subprocess.run('python3 vtel.py iscsi sync', shell=True)
         self.portal = iscsi.Portal()
         # print(self.portal.js.read_json())
-        self.portal.create('vip_test1', '10.203.1.210')
+        self.portal.create('vip_test1', '10.203.1.211')
 
     def teardown_class(self):
         print()
         # 以防删除不成功再次删除
-        self.portal.delete('vip_test1')
+        # self.portal.delete('vip_test1')
 
+    # @pytest.mark.dependency(scope='class')
     def test_create(self):
         """创建portal，测试用例包括：(名字不合规范/ip不合规范/port超出范围/netmark超出范围[已测试其校验函数])portal已存在/ip已被使用"""
         with patch('builtins.print') as terminal_print:
-            self.portal.create('$%^vip_test1', '10.203.1.211', 3260, 24)
+            self.portal.create('$%^vip_test1', '10.203.1.215', 3260, 24)
             terminal_print.assert_called_with('$%^vip_test1 naming does not conform to the specification')
         with patch('builtins.print') as terminal_print:
             self.portal.create('vip_test0', '10.203.1...34211', 3260, 24)
             terminal_print.assert_called_with('10.203.1...34211 does not meet specifications')
         with patch('builtins.print') as terminal_print:
-            self.portal.create('vip_test0', '10.203.1.211', 65555, 24)
+            self.portal.create('vip_test0', '10.203.1.215', 65555, 24)
             terminal_print.assert_called_with('65555 does not meet specifications(Range：3260-65535)')
         with patch('builtins.print') as terminal_print:
-            self.portal.create('vip_test0', '10.203.1.211', 3260, 40)
+            self.portal.create('vip_test0', '10.203.1.215', 3260, 40)
             terminal_print.assert_called_with('40 does not meet specifications(Range：1-32)')
         with patch('builtins.print') as terminal_print:
-            self.portal.create('vip_test1', '10.203.1.211', 3260, 24)
+            self.portal.create('vip_test1', '10.203.1.215', 3260, 24)
             terminal_print.assert_called_with('vip_test1 already exists, please use another name')
         with patch('builtins.print') as terminal_print:
-            self.portal.create('vip_pytest', '10.203.1.210')
-            terminal_print.assert_called_with('10.203.1.210 is already in use, please use another IP')
+            self.portal.create('vip_pytest2', '10.203.1.211')
+            terminal_print.assert_called_with('10.203.1.211 is already in use, please use another IP')
         with patch('builtins.print') as terminal_print:
-            self.portal.create('vip_pytest', '10.203.1.211')
-            terminal_print.assert_called_with('Create vip_pytest successfully')
+            self.portal.create('vip_pytest2', '10.203.1.213')
+        terminal_print.assert_called_with('Create vip_pytest2 successfully')
         # self.portal.delete('vip_pytest')
 
-    def test_modify(self):
-        """修改 portal,测试用例包括：portal不存在/ip格式不对正确/port范围不正确/修改内容与原来一致/修改的portal已配置了target/修改的portal没有配置target"""
+    # @pytest.mark.dependency(depends=["TestPortal::test_create"])
+    def test_modify(self, monkeypatch):
+        """修改 portal,测试用例包括：portal不存在/ip格式不正确/port范围不正确/修改内容一致/portal已配置了target/portal没有配置target/只修改ip/port/netmask"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip_pytest0', '10.203.1.212', 3260)
+            self.portal.modify('vip_pytest0', '10.203.1.212', 3260, 24)
             terminal_print.assert_called_with('Fail！Can\'t find vip_pytest0')
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip_pytest', '10.203.1.75', 3260)
+            self.portal.modify('vip_pytest2', '10.203.1.75', 3260, 24)
             terminal_print.assert_called_with('10.203.1.75 is already in use, please use another IP')
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip', '10.203.1.212...', 3260)
+            self.portal.modify('vip_pytest2', '10.203.1.212...', 3260, 24)
             terminal_print.assert_called_with('10.203.1.212... does not meet specifications')
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip', '10.203.1.212', 3200)
+            self.portal.modify('vip_pytest2', '10.203.1.212', 3200, 24)
             terminal_print.assert_called_with('3200 does not meet specifications(Range：3260-65535)')
+        # 修改内容与原来一致,若输入原来 ip 地址会提示该 ip 地址被使用（ps：三个参数全部为空时，portal_cmds模块会有特殊处理）
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip', '10.203.1.75', 3260)
-            terminal_print.assert_called_with('IP and port are the same as the before, no need to modify')
+            self.portal.modify('vip_pytest2', None, 3260, 24)
+            terminal_print.assert_called_with('The parameters are the same, no need to modify')
+        # 只修改 ip
+        with patch('builtins.print') as terminal_print:
+            self.portal.modify('vip_pytest2', '10.203.1.214', None, None)
+            terminal_print.assert_called_with('Modify vip_pytest2 successfully')
+        # 只修改 port
+        with patch('builtins.print') as terminal_print:
+            self.portal.modify('vip_pytest2', None, 3261, None)
+            terminal_print.assert_called_with('Modify vip_pytest2 successfully')
+        # 只修改 netmark
+        with patch('builtins.print') as terminal_print:
+            self.portal.modify('vip_pytest2', None, None, 22)
+            terminal_print.assert_called_with('Modify vip_pytest2 successfully')
         # 修改的portal已配置了target，修改portblk的时候注意命名是否能找到
         with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip_test2', '10.203.1.205', 3260)
+            self.portal.modify('vip_pytest', '10.203.1.205', 3260, 24)
             # terminal_print.assert_called_with('Modify target_test successfully')
-            terminal_print.assert_called_with('Modify vip_test2 successfully')
-        with patch('builtins.print') as terminal_print:
-            self.portal.modify('vip_pytest', '10.203.1.214', 3260)
             terminal_print.assert_called_with('Modify vip_pytest successfully')
+        # 修改的portal没有配置target
+        with patch('builtins.print') as terminal_print:
+            self.portal.modify('vip_pytest2', '10.203.1.213', 3260, 24)
+            terminal_print.assert_called_with('Modify vip_pytest2 successfully')
 
-        self.portal.modify('vip_test2', '10.203.1.206', 3260)
-        self.portal.delete('vip_pytest')
+        self.portal.modify('vip_pytest', '10.203.1.75', 3260, 24)
+        self.portal.delete('vip_pytest2')
 
     def test__check_status(self):
         """检查 portal 创建的 status，测试用例包括：portal状态正常/portal状态异常"""
         with patch('builtins.print') as terminal_print:
-            assert self.portal._check_status('vip') == 'OK'
-            terminal_print.assert_called_with('Create vip successfully')
-        # vip_pytest 已删除的情况下
+            assert self.portal._check_status('vip_pytest') == 'OK'
+            terminal_print.assert_called_with('Create vip_pytest successfully')
+        # vip_pytest0 已删除的情况下
         with patch('builtins.print') as terminal_print:
-            self.portal._check_status('vip_pytest')
-            terminal_print.assert_called_with('Failed to create vip_pytest, please check')
+            self.portal._check_status('vip_pytest0')
+            terminal_print.assert_called_with('Failed to create vip_pytest0, please check')
 
-    def test_delete(self):
+    # @pytest.mark.dependency(depends=["TestPortal::test_create"])
+    def test_delete(self, monkeypatch):
         """删除portal，测试用例包括：portal不存在/删除已配置target的portal，删除失败/删除成功"""
+        monkeypatch.setattr('builtins.input', lambda: "y")
         with patch('builtins.print') as terminal_print:
-            self.portal.delete('vip_pytest')
-        terminal_print.assert_called_with('Fail！Can\'t find vip_pytest')
+            self.portal.delete('vip_pytest0')
+        terminal_print.assert_called_with('Fail！Can\'t find vip_pytest0')
         with patch('builtins.print') as terminal_print:
             self.portal.delete('vip_test1')
         terminal_print.assert_called_with('Delete vip_test1 successfully')
         with patch('builtins.print') as terminal_print:
-            self.portal.delete('vip')
+            self.portal.delete('vip_pytest')
         terminal_print.assert_called_with('In use：t_test. Can not delete')
 
     def test_show(self):
@@ -929,8 +868,7 @@ class TestPortal:
         # print(self.portal.show())
         assert len(self.portal.show()) >= 1
 
-        # 格式要求：必须以字母开头，只能包含字母、数字、下划线_
-
+    # 格式要求：必须以字母开头，只能包含字母、数字、下划线_
     def test__check_name(self):
         """检查 portal_name，测试用例包括：不以字母开头/包含其他字符/包含中文字符/正确命名"""
         assert self.portal._check_name('sgfbfuhf')
