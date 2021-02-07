@@ -110,39 +110,6 @@ table td:hover { /* 鼠标滑过  显示隐藏的内容  伴有横向的滚动�
 			</div>
 
 			<div class="row">
-				<div class="col-xs-6 ">
-					<label for="host_name" class="col-sm-2 control-label">Alias</label>
-					<div class="col-sm-10">
-						<input type="text" class="form-control" id="host_name"
-							placeholder="请输入Alias" style="width: 200px;" value=""
-							onblur="host_name_myfunction()"> <input
-							id="host_name_hid" hidden="hidden" value="0"> <input
-							id="host_name_verify_status" hidden="hidden" value="0"> <span
-							class="red"> <span id="host_name_examine" class="hidden">Host已存在！</span>
-							<span id="host_name_format" class="hidden">格式验证失败:仅支持字母数字以及下划线，且以字母开头</span>
-						</span>
-					</div>
-					<div class="form-group">
-						<label for="host_iqn" class="col-sm-2 control-label">IQN</label>
-						<div class="col-sm-10">
-							<input type="text" class="form-control" id="host_iqn"
-								placeholder="请输入IQN" style="width: 200px;" value=""
-								onblur="iqn_myfunction()"> <input id="host_iqn_hid"
-								hidden="hidden" value="0"> <input
-								id="host_iqn_verify_status" hidden="hidden" value="0"> <span
-								class="red"> <span id="iqn_format" class="hidden">IQN正确格式:
-									iqn.yyyy-mm.naming-authority:unique name</span>
-							</span>
-						</div>
-					</div>
-					<div class="form-group">
-						<div class="col-sm-offset-2 col-sm-10">
-							<button type="button" class="btn btn-default" name="host_create"
-								id="host_create">Create</button>
-						</div>
-					</div>
-				</div>
-				<div class="col-xs-6 "></div>
 			</div>
 		</div>
 		<div class="row clearfix">
@@ -157,8 +124,11 @@ table td:hover { /* 鼠标滑过  显示隐藏的内容  伴有横向的滚动�
 						border="1">
 						<thead>
 							<tr>
-								<th style="width: 100px;">Host</th>
-								<th>IQN</th>
+								<th style="width: 100px;">portal name</th>
+								<th style="width: 100px;">ip</th>
+								<th style="width: 100px;">port</th>
+								<th style="width: 100px;">netmask</th>
+								<th style="width: 100px;">target</th>
 								<th style="width: 200px;">操作</th>
 							</tr>
 						</thead>

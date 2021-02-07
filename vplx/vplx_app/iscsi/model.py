@@ -357,10 +357,48 @@ class AllPtResult(views.MethodView):
 #         dict_data = get_request_data()
 #         logger = log.Log()
 #         logger.write_to_log('DATA', 'ROUTE', '/map/show/data', dict_data['ip'], '')
-        if not MAP_RESULT:
+        if not PORTAL_RESULT:
            update_portal()
 #         logger.write_to_log('DATA', 'RETURN', 'AllMapResult', 'result', MAP_RESULT)
         return cors_data(PORTAL_RESULT)
+
+#TARGET_RESULT
+TARGET_RESULT = None
+
+
+def update_target():
+    global TARGET_RESULT
+    js = iscsi_json.JsonOperation()
+    js.json_data = js.read_json()
+    TARGET_RESULT = js.json_data['Target']
+    return True
+
+
+class OprtAllTg(views.MethodView):
+
+    def get(self):
+#         dict_data = get_request_data()
+#         logger = log.Log()
+#         logger.write_to_log('OPRT', 'ROUTE', '/map/show/oprt', dict_data['ip'], '')
+        if update_target():
+#             logger.write_to_log('DATA', 'RETURN', 'OprtAllMap', 'result', '0')
+            return cors_data("0")
+        else:
+#             logger.write_to_log('DATA', 'RETURN', 'OprtAllMap', 'result', '1')
+            return cors_data("1")
+
+    
+class AllTgResult(views.MethodView):
+
+    def get(self):
+#         dict_data = get_request_data()
+#         logger = log.Log()
+#         logger.write_to_log('DATA', 'ROUTE', '/map/show/data', dict_data['ip'], '')
+        if not TARGET_RESULT:
+           update_target()
+#         logger.write_to_log('DATA', 'RETURN', 'AllMapResult', 'result', MAP_RESULT)
+        return cors_data(TARGET_RESULT)
+
 
 
 

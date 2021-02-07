@@ -34,6 +34,8 @@ iscsi_blueprint.add_url_rule('/map/show/oprt', view_func=model.OprtAllMap.as_vie
 iscsi_blueprint.add_url_rule('/map/show/data', view_func=model.AllMapResult.as_view('all_map_result'))
 iscsi_blueprint.add_url_rule('/portal/show/oprt', view_func=model.OprtAllPt.as_view('oprt_all_portal'))
 iscsi_blueprint.add_url_rule('/portal/show/data', view_func=model.AllPtResult.as_view('all_portal_result'))
+iscsi_blueprint.add_url_rule('/target/show/oprt', view_func=model.OprtAllTg.as_view('oprt_all_target'))
+iscsi_blueprint.add_url_rule('/target/show/data', view_func=model.AllTgResult.as_view('all_target_result'))
 
 
 '''
