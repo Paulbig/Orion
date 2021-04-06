@@ -199,6 +199,7 @@ class NodeCreate(views.MethodView):
 class ResourceCreate(views.MethodView):
 
     def get(self):
+        print("----------------------")
         data = get_request_data()
         res_data = eval(data['resource'])
         print(data)
@@ -264,10 +265,18 @@ class lvmView(views.MethodView):
     def get(self):
         return cors_data(lvm)
 
+sp2 = {'code': 0, 'msg': '', 'count': 1000, 
+'data':
+ [{'name': 'ubuntu', 'children': [{'name': 'DfltDisklessStorPool', 'node_name': 'ubuntu', 'value': 1,'parentId':1},
+                                   {'name': 'pytest_sp1', 'node_name': 'ubuntu', 'value': 2,'parentId':1}]},
+{'name': '1111', 'children': [{'name': 'DfltDisklessStorPool22', 'node_name': '1111', 'value': 3,'parentId':2},
+                                   {'name': 'pytest_sp1222', 'node_name': '1111', 'value': 4,'parentId':2}]}]}
 
 class spView(views.MethodView):  
     def get(self):
+        print(sp)
         return cors_data(sp)
+#         return cors_data(sp2)
 
     
     
