@@ -2,7 +2,8 @@
 import execute as ex
 import sundry as s
 import sqlite3
-import sys
+
+import scheduler
 
 
 class DataIsEmpty(Exception):
@@ -227,13 +228,19 @@ class LinstorDB(Database):
 
         insert_ntb_sql = '''insert into nodetb(Node,NodeType,Addresses,State)values(?,?,?,?)'''
 
-        linstor = ex.Linstor()
-        node = linstor.get_linstor_data('linstor --no-color --no-utf8 n l')
-        res = linstor.get_linstor_data('linstor --no-color --no-utf8 r lv')
-        sp = linstor.get_linstor_data('linstor --no-color --no-utf8 sp l')
-        self.insert_data(insert_ntb_sql, node, 'nodetb')
-        self.insert_data(insert_rtb_sql, res, 'resourcetb')
-        self.insert_data(insert_stb_sql, sp, 'storagepooltb')
+        # linstor = ex.Linstor()
+        # node = linstor.get_linstor_data('linstor --no-color --no-utf8 n l')
+        # res = linstor.get_linstor_data('linstor --no-color --no-utf8 r lv')
+        # sp = linstor.get_linstor_data('linstor --no-color --no-utf8 sp l')
+        # self.insert_data(insert_ntb_sql, node, 'nodetb')
+        # self.insert_data(insert_rtb_sql, res, 'resourcetb')
+        # self.insert_data(insert_stb_sql, sp, 'storagepooltb')
+
+        data = scheduler.Scheduler().get_linstor_data()
+        self.insert_data2(insert_ntb_sql, data['node_data'], 'nodetb')
+        self.insert_data2(insert_rtb_sql, data['res_data'], 'resourcetb')
+        self.insert_data2(insert_stb_sql, data['sp_data'], 'storagepooltb')
+
 
     @s.deco_db_insert
     def insert_data(self, sql, list_data, tablename):
@@ -241,6 +248,13 @@ class LinstorDB(Database):
             if not list_data[i]:
                 s.prt_log('数据错误，无法插入数据表', 2)
             self.cur.execute(sql, list_data[i])
+
+
+    @s.deco_db_insert
+    def insert_data2(self, sql, list_data, tablename):
+        for dict in list_data:
+            list_data = [x for x in dict.values()]
+            self.cur.execute(sql, list_data)
 
 
 class CollectData(LinstorDB):

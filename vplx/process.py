@@ -38,7 +38,7 @@ class Process_data():
     def get_option_node(self):
 
         def get_online_node():
-            select_sql = "SELECT Node FROM nodetb WHERE State = 'Online'"
+            select_sql = "SELECT Node FROM nodetb WHERE State = 'Online' OR State = 'ONLINE'"
             return self.sql_fetch_all(select_sql)
 
         list_node = get_online_node()  # E.g:[('klay1',), ('klay2',)]
@@ -52,7 +52,7 @@ class Process_data():
     def get_option_sp(self):
 
         def get_online_node():
-            select_sql = "SELECT Node FROM nodetb WHERE State = 'Online'"
+            select_sql = "SELECT Node FROM nodetb WHERE State = 'Online' OR State = 'ONLINE'"
             return self.sql_fetch_all(select_sql)
 
         def get_ok_sp(node):
@@ -63,7 +63,7 @@ class Process_data():
         list_node = get_online_node()
         list_result = []
         index = 1
-        parentID = 1 
+        parentID = 1
         for node in list_node:
             list_sp = get_ok_sp(node)
             list_result_sp = []
@@ -74,7 +74,7 @@ class Process_data():
             dict_one = {'name':node[0], 'children':list_result_sp}
             list_result.append(dict_one)
             parentID += 1
-            dict = {"code": 0, "msg": "", "count": 1000,"data":list_result}
+        dict = {"code": 0, "msg": "", "count": 1000,"data":list_result}
         return dict
 
     # 选项lvm/thinlv数据
@@ -108,10 +108,10 @@ class Process_data():
         num_node = int(get_node_num()) + 1
         list_result = []
         for i in range(1, num_node):
-            print(i)
+            # print(i)
             dict_one = {'key_nodenum':i}
             list_result.append(dict_one)
-        print(list_result)
+        # print(list_result)
         return list_result
 
     # resourece表格格式
@@ -214,8 +214,8 @@ class Process_data():
             node, nodetype, addr, status = self.sql_fetch_one(sql_node(i))
             res_num = self.sql_fetch_one(sql_count_res(i))
             stp_num = self.sql_fetch_one(sql_count_stp(i))
-            print("res_num:", res_num)
-            print("stp_num:", stp_num)
+            # print("res_num:", res_num)
+            # print("stp_num:", stp_num)
             list_resdict = []
             for res in self.sql_fetch_all(sql_res(i)):
                 res_name, stp_name, size, device_name, used, status = res
@@ -234,3 +234,4 @@ class Process_data():
         dict = {"code": 0, "msg": "", "count": 1000, "data": date}
         cur.close()
         return dict
+
